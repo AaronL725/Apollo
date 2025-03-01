@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>易速鲜花内部问答系统</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header img {
+            margin: 20px 0;
+        }
+        form {
+            margin: 20px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="submit"] {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="submit"]:hover {
+            background-color: #ff5252;
+        }
+        .answer {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>易速鲜花内部问答系统</h1>
+            <img src="{{url_for('static',filename='flower.png')}}" alt="flower logo" width="200">
+        </div>
+        <form method="POST">
+            <label for="question">请输入您的问题：</label><br>
+            <input type="text" id="question" name="question" placeholder="例如：易速鲜花的退货政策是什么？"><br>
+            <input type="submit" value="提交问题">
+        </form>
+        {% if result is defined %}
+            <div class="answer">
+                <h2>回答</h2>
+                <p>{{result.answer}}</p>
+                {% if result.sources %}
+                <div class="sources">
+                    <h3>来源文档</h3>
+                    <p>{{result.sources}}</p>
+                </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
