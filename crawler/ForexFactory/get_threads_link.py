@@ -4,7 +4,7 @@ import sys
 from bs4 import BeautifulSoup
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
 
-async def get_threads_link(start_page=1, end_page=1, max_concurrent=15):
+async def get_threads_link(start_page=1, end_page=1, max_concurrent=50):
     """
     # 获取ForexFactory论坛指定页码范围内的线程链接
     # 参数:
@@ -158,4 +158,28 @@ if __name__ == "__main__":
     
     asyncio.run(run())
     
+'''
+
+
+
+# 输出格式
+'''
+[
+  {
+    "title": "Trading Made Simple",
+    "link": "https://www.forexfactory.com/thread/291622-trading-made-simple"
+  },
+  {
+    "title": "Supernova GBP/JPY Mini Trend Catcher",
+    "link": "https://www.forexfactory.com/thread/44216-supernova-gbpjpy-mini-trend-catcher"
+  },
+  {
+    "title": "Come Surfing Fx With Me System",
+    "link": "https://www.forexfactory.com/thread/527711-come-surfing-fx-with-me-system"
+  },
+  {
+    "title": "Roadmap - A Way To Read Markets",
+    "link": "https://www.forexfactory.com/thread/993524-roadmap-a-way-to-read-markets"
+  }
+]
 '''
