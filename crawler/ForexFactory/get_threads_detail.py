@@ -340,8 +340,10 @@ async def get_threads_detail(thread_url: str, start_page: int = 1, max_pages: in
 
 async def main():
     # 示例用法
-    thread_url = "https://www.forexfactory.com/thread/588764-pivot-trading"
+    thread_url = "https://www.forexfactory.com/thread/8812-td-lines"
     content = await get_threads_detail(thread_url, start_page=1, max_pages=2)
+    # print(content)
 
 if __name__ == "__main__":
     asyncio.run(main()) 
+
