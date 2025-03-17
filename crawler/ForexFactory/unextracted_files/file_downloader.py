@@ -53,7 +53,16 @@ async def download_file_async(session: aiohttp.ClientSession, scraper: cloudscra
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(save_dir, filename)
         headers = get_random_headers()
-        download_url = url.replace('thread/', 'attachment.php?attachment/')
+        
+        # 确保URL格式正确，添加域名
+        if url.startswith('/'):
+            download_url = f"https://www.forexfactory.com{url}"
+        elif not url.startswith(('http://', 'https://')):
+            download_url = f"https://www.forexfactory.com/{url}"
+        else:
+            download_url = url
+            
+        download_url = download_url.replace('thread/', 'attachment.php?attachment/')
         
         # cloudscraper下载
         scraper_response = scraper.get(download_url, headers=headers, allow_redirects=True)

@@ -4,7 +4,7 @@ import sys
 from bs4 import BeautifulSoup
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
 
-async def get_threads_link(start_page=1, end_page=1, max_concurrent=50):
+async def get_threads_link(start_page=1, end_page=1, max_concurrent=10):
     """
     # 获取ForexFactory论坛指定页码范围内的线程链接
     # 参数:
