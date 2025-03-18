@@ -6,60 +6,60 @@ import re
 from tqdm import tqdm
 
 def create_vector_database():
-    # 定义路径
+    # 路径设置
     current_dir = os.path.dirname(os.path.abspath(__file__))
     unextracted_files_dir = os.path.join(current_dir, "unextracted_files")
     vectorized_data_dir = os.path.join(current_dir, "vectorized_data")
     
-    # 确保向量数据库目录存在，如果已存在则先删除
+    # 清理并重建向量数据库目录
     if os.path.exists(vectorized_data_dir):
         shutil.rmtree(vectorized_data_dir)
     os.makedirs(vectorized_data_dir, exist_ok=True)
     
-    # 创建持久化的Chroma客户端
+    # 初始化持久化的ChromaDB客户端
     client = chromadb.PersistentClient(path=vectorized_data_dir)
     
-    # 使用默认的句子转换器嵌入函数
+    # 设置句子转换器作为嵌入函数
     embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction()
     
-    # 获取所有.md文件
+    # 获取待处理的markdown文件列表
     md_files = [f for f in os.listdir(unextracted_files_dir) if f.endswith('.md')]
     
-    # 为每个文件创建独立的集合
+    # 遍历处理每个文件
     total_files = len(md_files)
     for idx, md_file in enumerate(tqdm(md_files), 1):
         print(f"处理文件 {idx}/{total_files}: {md_file}")
-        # 使用文件名创建集合（移除.md后缀）
+        # 从文件名创建集合名称
         collection_name = os.path.splitext(md_file)[0]
         
-        # 创建集合
+        # 创建向量集合，设置HNSW索引参数
         collection = client.create_collection(
             name=collection_name,
             embedding_function=embedding_function,
             metadata={
                 "hnsw:space": "cosine",
-                "hnsw:construction_ef": 200,  # 提高索引质量
-                "hnsw:search_ef": 200  # 提高搜索质量
+                "hnsw:construction_ef": 200,  # 提高索引质量的参数
+                "hnsw:search_ef": 200  # 提高搜索质量的参数
             }
         )
         
-        # 读取文件内容
+        # 读取文件内容，自动处理编码问题
         file_path = os.path.join(unextracted_files_dir, md_file)
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 content = file.read()
         except UnicodeDecodeError:
-            # 尝试其他编码
+            # 尝试备选编码
             with open(file_path, 'r', encoding='gbk') as file:
                 content = file.read()
         
-        # 将内容分块，每个块最大1000个字符（可以根据需要调整）
+        # 将内容分块处理
         chunks = split_into_chunks(content, max_length=1000)
         
-        # 为每个块创建唯一ID
+        # 为每个块生成唯一ID
         ids = [f"{collection_name}_chunk_{i}" for i in range(len(chunks))]
         
-        # 添加到集合中
+        # 将文档块添加到向量数据库
         collection.add(
             documents=chunks,
             ids=ids,
@@ -72,19 +72,15 @@ def create_vector_database():
     return client
 
 def split_into_chunks(text, max_length=800, overlap=80):
-    """
-    将文本分割成重叠的块
-    """
-    # 尝试先按帖子分割
+    # 智能文本分块函数，优先按帖子结构分割
     posts = []
     post_markers = re.findall(r'\* \[#\d+\].*?(?=\* \[#\d+\]|\Z)', text, re.DOTALL)
     
     if post_markers and len(post_markers) > 2:
-        # 如果能识别出多个帖子，先按帖子处理
+        # 存在多个帖子标记时，按帖子进行分割
         for post in post_markers:
-            # 主要帖子(较长内容)进一步分块
+            # 对长帖子进行进一步分块
             if len(post) > max_length:
-                # 对长帖子使用常规分块方法
                 post_chunks = _split_text_by_semantic(post, max_length, overlap)
                 posts.extend(post_chunks)
             else:
@@ -92,13 +88,11 @@ def split_into_chunks(text, max_length=800, overlap=80):
                 posts.append(post)
         return posts
     else:
-        # 无法按帖子分割，使用语义分块
+        # 无法识别帖子结构时，使用语义分块
         return _split_text_by_semantic(text, max_length, overlap)
 
 def _split_text_by_semantic(text, max_length=800, overlap=80):
-    """
-    按语义分割文本
-    """
+    # 按语义边界智能分割文本的内部函数
     if len(text) <= max_length:
         return [text]
     
@@ -108,18 +102,16 @@ def _split_text_by_semantic(text, max_length=800, overlap=80):
     while start < len(text):
         end = min(start + max_length, len(text))
         
-        # 优先在帖子边界分割
+        # 分割优先级：帖子边界 > 段落边界 > 列表项边界 > 句子边界 > 空白字符
         if end < len(text):
             post_boundary = text.rfind("* [#", start, end)
             if post_boundary > start + max_length // 2:
                 end = post_boundary
             else:
-                # 其次在段落边界分割
                 paragraph_boundary = text.rfind("\n\n", start, end)
                 if paragraph_boundary > start + max_length // 2:
                     end = paragraph_boundary + 2
                 else:
-                    # 再次在列表项边界分割
                     list_boundary = max(
                         text.rfind("\n- ", start, end),
                         text.rfind("\ni - ", start, end),
@@ -128,7 +120,6 @@ def _split_text_by_semantic(text, max_length=800, overlap=80):
                     if list_boundary > start + max_length // 2:
                         end = list_boundary
                     else:
-                        # 最后在句子边界分割
                         sentence_boundary = max(
                             text.rfind(". ", start, end),
                             text.rfind("? ", start, end),
@@ -137,7 +128,7 @@ def _split_text_by_semantic(text, max_length=800, overlap=80):
                         if sentence_boundary > start + max_length // 2:
                             end = sentence_boundary + 2
                         else:
-                            # 如果都找不到，在空白处分割
+                            # 无合适边界时，在空白处分割
                             while end > start + max_length - overlap and not text[end].isspace():
                                 end -= 1
                             
@@ -150,34 +141,29 @@ def _split_text_by_semantic(text, max_length=800, overlap=80):
     return chunks
 
 def query_document(client, document_name, query_text, n_results=5, where_filter=None):
-    """
-    查询特定文档的内容
-    """
-    # 移除可能的.md后缀
+    # 查询特定文档向量集合的函数
     collection_name = document_name
     if collection_name.endswith('.md'):
         collection_name = os.path.splitext(collection_name)[0]
     
-    # 获取集合
+    # 尝试获取集合
     try:
         collection = client.get_collection(name=collection_name)
     except ValueError:
         print(f"未找到文档 {document_name} 的集合")
         return None
     
-    # 执行查询
+    # 执行相似度查询
     results = collection.query(
         query_texts=[query_text],
         n_results=n_results,
-        where=where_filter  # 添加过滤条件
+        where=where_filter  # 可选的过滤条件
     )
     
     return results
 
 if __name__ == "__main__":
-    # 创建向量数据库
+    # 程序入口点
     client = create_vector_database()
     
-    # 移除查询示例代码
-    print("\n向量数据库创建完成，可以通过query_document函数进行查询")
-    print("示例: query_document(client, '文档名', '查询文本')")
+    print("\n向量数据库创建完成")
